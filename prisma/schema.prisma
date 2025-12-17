@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Team {
+  id             String   @id @default(uuid())
+  name           String
+  primaryColor   String   @default("#000000")
+  secondaryColor String   @default("#FFFFFF")
+  points         Int      @default(0)
+  goalsScored    Int      @default(0)
+  goalsConceded  Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  matchesAsTeam1   Match[]   @relation("Team1Matches")
+  matchesAsTeam2   Match[]   @relation("Team2Matches")
+  championGameDays GameDay[] @relation("ChampionGameDays")
+
+  @@map("teams")
+}
+
+model GameDay {
+  id                  String    @id @default(uuid())
+  date                DateTime
+  description         String?
+  isOpen              Boolean   @default(true)
+  championId          String? // ID do time campeão do dia
+  closedAt            DateTime? // Data/hora do encerramento
+  finalStandings      String? // JSON com ranking final (para futuras regras como tempo de jogo)
+  matchDurationMinutes Int      @default(10) // Duração da partida em minutos
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  matches  Match[]
+  queue    Queue?
+  champion Team?   @relation("ChampionGameDays", fields: [championId], references: [id])
+
+  @@map("game_days")
+}
+
+model Match {
+  id                  String    @id @default(uuid())
+  gameDayId           String
+  team1Id             String
+  team2Id             String
+  goalsTeam1          Int       @default(0)
+  goalsTeam2          Int       @default(0)
+  status              String    @default("scheduled") // scheduled, in_progress, finished
+  startedAt           DateTime? // Data/hora de início da partida
+  endedAt             DateTime? // Data/hora de encerramento da partida
+  actualDurationMinutes Float?  // Tempo real cronometrado da partida em minutos
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  gameDay GameDay @relation(fields: [gameDayId], references: [id], onDelete: Cascade)
+  team1   Team    @relation("Team1Matches", fields: [team1Id], references: [id])
+  team2   Team    @relation("Team2Matches", fields: [team2Id], references: [id])
+
+  @@map("matches")
+}
+
+model Queue {
+  id        String   @id @default(uuid())
+  gameDayId String   @unique
+  teamIds   String // JSON array de IDs dos times na ordem da fila
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  gameDay GameDay @relation(fields: [gameDayId], references: [id], onDelete: Cascade)
+
+  @@map("queues")
+}
