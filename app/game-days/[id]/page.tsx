@@ -1,3 +1,5 @@
+'use client';
+
 import { notFound } from "next/navigation";
 import { getGameDay } from "@/lib/actions/gameDays";
 import { getTeams } from "@/lib/actions/teams";
