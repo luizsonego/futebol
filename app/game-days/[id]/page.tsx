@@ -10,35 +10,42 @@ import { GameDayDeleteButton } from "@/components/GameDayDeleteButton";
 import { type TeamStanding } from "@/lib/utils/standings";
 
 export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
 
 interface GameDayDetailPageProps {
-  params: {
+  params: Promise<{
+    id: string;
+  }> | {
     id: string;
   };
 }
 
 export default async function GameDayDetailPage({ params }: GameDayDetailPageProps) {
-  const id = params?.id || '';
-  if (!id) {
-    notFound();
-  }
-  
-  const gameDayResult = await getGameDay(id);
-  
-  if (!gameDayResult.success || !gameDayResult.data) {
-    notFound();
-  }
+  try {
+    // Suporta tanto params como Promise (Next.js 15+) quanto objeto direto (Next.js 14)
+    const resolvedParams = params instanceof Promise ? await params : params;
+    const id = resolvedParams?.id || '';
+    
+    if (!id) {
+      notFound();
+    }
+    
+    const gameDayResult = await getGameDay(id);
+    
+    if (!gameDayResult.success || !gameDayResult.data) {
+      notFound();
+    }
 
-  const gameDay = gameDayResult.data as { id: string; date: Date | string; description: string | null; isOpen: boolean; championId: string | null; closedAt: Date | null; finalStandings: string | null; matchDurationMinutes: number; createdAt: Date; updatedAt: Date; matches: any[]; champion: any };
-  
-  const teamsResult = await getTeams();
-  const teams = (teamsResult.success ? teamsResult.data || [] : []) as Array<{ id: string; name: string; [key: string]: any }>;
-  const standingsResult = await getStandingsByGameDay(gameDay.id);
-  const standings = (standingsResult.success ? standingsResult.data || [] : []) as TeamStanding[];
+    const gameDay = gameDayResult.data as { id: string; date: Date | string; description: string | null; isOpen: boolean; championId: string | null; closedAt: Date | null; finalStandings: string | null; matchDurationMinutes: number; createdAt: Date; updatedAt: Date; matches: any[]; champion: any };
+    
+    const teamsResult = await getTeams();
+    const teams = (teamsResult.success ? teamsResult.data || [] : []) as Array<{ id: string; name: string; [key: string]: any }>;
+    const standingsResult = await getStandingsByGameDay(gameDay.id);
+    const standings = (standingsResult.success ? standingsResult.data || [] : []) as TeamStanding[];
 
-  const date = new Date(gameDay.date);
+    const date = new Date(gameDay.date);
 
-  return (
+    return (
     <div className="page-container">
       <div className="mb-4 sm:mb-6">
         <h1 className="page-title text-xl sm:text-2xl md:text-3xl">
@@ -124,7 +131,7 @@ export default async function GameDayDetailPage({ params }: GameDayDetailPagePro
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
             <p className="text-green-800 font-semibold text-sm sm:text-base">
-              Dia de jogos aberto -- Você pode criar novas partidas.
+              Dia de jogos aberto - Você pode criar novas partidas.
             </p>
           </div>
         </div>
@@ -219,6 +226,10 @@ export default async function GameDayDetailPage({ params }: GameDayDetailPagePro
         </div>
       </div>
     </div>
-  );
+    );
+  } catch (error) {
+    console.error('Error loading game day page:', error);
+    notFound();
+  }
 }
 
