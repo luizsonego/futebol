@@ -124,7 +124,7 @@ export default async function GameDayDetailPage({ params }: GameDayDetailPagePro
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
             <p className="text-green-800 font-semibold text-sm sm:text-base">
-              Dia de jogos aberto - Você pode criar novas partidas.
+              Dia de jogos aberto -- Você pode criar novas partidas.
             </p>
           </div>
         </div>
