@@ -12,6 +12,11 @@ import { type TeamStanding } from "@/lib/utils/standings";
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
+// Evita tentativas de geração estática durante o build
+export async function generateStaticParams() {
+  return [];
+}
+
 interface GameDayDetailPageProps {
   params: Promise<{
     id: string;
@@ -24,9 +29,9 @@ export default async function GameDayDetailPage({ params }: GameDayDetailPagePro
   try {
     // Suporta tanto params como Promise (Next.js 15+) quanto objeto direto (Next.js 14)
     const resolvedParams = params instanceof Promise ? await params : params;
-    const id = resolvedParams?.id || '';
+    const id = resolvedParams?.id;
     
-    if (!id) {
+    if (!id || typeof id !== 'string' || id.trim() === '') {
       notFound();
     }
     
@@ -38,9 +43,13 @@ export default async function GameDayDetailPage({ params }: GameDayDetailPagePro
 
     const gameDay = gameDayResult.data as { id: string; date: Date | string; description: string | null; isOpen: boolean; championId: string | null; closedAt: Date | null; finalStandings: string | null; matchDurationMinutes: number; createdAt: Date; updatedAt: Date; matches: any[]; champion: any };
     
-    const teamsResult = await getTeams();
+    // Busca times e standings em paralelo para melhor performance
+    const [teamsResult, standingsResult] = await Promise.all([
+      getTeams(),
+      getStandingsByGameDay(gameDay.id),
+    ]);
+    
     const teams = (teamsResult.success ? teamsResult.data || [] : []) as Array<{ id: string; name: string; [key: string]: any }>;
-    const standingsResult = await getStandingsByGameDay(gameDay.id);
     const standings = (standingsResult.success ? standingsResult.data || [] : []) as TeamStanding[];
 
     const date = new Date(gameDay.date);
@@ -228,7 +237,10 @@ export default async function GameDayDetailPage({ params }: GameDayDetailPagePro
     </div>
     );
   } catch (error) {
-    console.error('Error loading game day page:', error);
+    // Durante o build, se houver erro, retorna 404
+    if (error instanceof Error) {
+      console.error('Error loading game day page:', error.message);
+    }
     notFound();
   }
 }
