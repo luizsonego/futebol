@@ -1,4 +1,3 @@
-'use client';
 import { getGameDays, getOpenGameDay } from "@/lib/actions/gameDays";
 import { GameDayForm } from "@/components/GameDayForm";
 import { GameDayControls } from "@/components/GameDayControls";

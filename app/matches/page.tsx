@@ -1,4 +1,3 @@
-'use client';
 import { getMatches } from "@/lib/actions/matches";
 import { MatchCard } from "@/components/MatchCard";
 

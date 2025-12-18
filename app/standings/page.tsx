@@ -1,4 +1,3 @@
-'use client';
 import { getStandings } from "@/lib/actions/standings";
 import { StandingsTable } from "@/components/StandingsTable";
 import { type TeamStanding } from "@/lib/utils/standings";

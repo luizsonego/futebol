@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { MobileFooter } from "@/components/MobileFooter";
 import { ToastProvider } from "@/components/ToastProvider";
 import { GameProvider } from "@/components/GameContext";
@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: "Gerenciamento de Futebol",
   description: "MVP para gerenciamento de jogos de futebol",
   manifest: "/manifest.json",
-  themeColor: "#2563eb",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -26,6 +25,10 @@ export const metadata: Metadata = {
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({

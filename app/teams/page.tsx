@@ -1,4 +1,3 @@
-'use client';
 import { TeamForm } from "@/components/TeamForm";
 import { TeamCard } from "@/components/TeamCard";
 import { getTeams } from "@/lib/actions/teams";
