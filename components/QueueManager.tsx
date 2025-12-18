@@ -28,7 +28,7 @@ export function QueueManager({ gameDayId, teams }: QueueManagerProps) {
     setIsLoading(true);
     const result = await getQueue(gameDayId);
     if (result.success && result.data) {
-      setQueueTeamIds(result.data.teamIds);
+      setQueueTeamIds((result.data as { teamIds: string[] }).teamIds || []);
     }
     setIsLoading(false);
   };

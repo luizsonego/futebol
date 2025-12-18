@@ -14,7 +14,7 @@ export function GameMoreMenu({ matchId, onClose }: GameMoreMenuProps) {
 
   // Fechar menu ao clicar fora
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         onClose?.();
@@ -23,12 +23,12 @@ export function GameMoreMenu({ matchId, onClose }: GameMoreMenuProps) {
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside as EventListener);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside as EventListener);
     };
   }, [isOpen, onClose]);
 
