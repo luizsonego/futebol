@@ -4,12 +4,12 @@ import { getTeams } from "@/lib/actions/teams";
 import { getStandingsByGameDay } from "@/lib/actions/standings";
 import { MatchCard } from "@/components/MatchCard";
 import { MatchForm } from "@/components/MatchForm";
-import { createAutomaticBracketing } from "@/lib/actions/bracketing";
 import { BracketingButton } from "@/components/BracketingButton";
-import { QueueManager } from "@/components/QueueManager";
 import { StandingsTable } from "@/components/StandingsTable";
 import { GameDayDeleteButton } from "@/components/GameDayDeleteButton";
 import { type TeamStanding } from "@/lib/utils/standings";
+
+export const dynamic = 'force-dynamic';
 
 interface GameDayDetailPageProps {
   params: {
@@ -18,7 +18,12 @@ interface GameDayDetailPageProps {
 }
 
 export default async function GameDayDetailPage({ params }: GameDayDetailPageProps) {
-  const gameDayResult = await getGameDay(params?.id || '');
+  const id = params?.id || '';
+  if (!id) {
+    notFound();
+  }
+  
+  const gameDayResult = await getGameDay(id);
   
   if (!gameDayResult.success || !gameDayResult.data) {
     notFound();
