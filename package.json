@@ -3,13 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "npm run db:setup && next dev",
+    "build": "npm run db:setup && prisma generate && bash scripts/run-migrations.sh && next build",
+    "build:migrate": "npm run db:setup && prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:setup": "node scripts/setup-db.js",
+    "db:migrate:postgres": "node scripts/create-postgres-migrations.js",
+    "postinstall": "npm run db:setup && prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",

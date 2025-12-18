@@ -98,11 +98,23 @@ A tabela é ordenada por:
 ## 📝 Scripts Disponíveis
 
 - `npm run dev` - Inicia servidor de desenvolvimento
-- `npm run build` - Cria build de produção
+- `npm run build` - Cria build de produção (executa migrações automaticamente)
 - `npm run start` - Inicia servidor de produção
 - `npm run db:push` - Aplica mudanças do schema ao banco
+- `npm run db:migrate` - Aplica migrações do Prisma
 - `npm run db:studio` - Abre Prisma Studio (interface visual do banco)
 - `npm run db:generate` - Gera cliente Prisma
+- `npm run db:setup` - Configura o provider do Prisma (SQLite/PostgreSQL)
+
+## 🚀 Deploy na Vercel
+
+Para fazer deploy na Vercel com PostgreSQL, consulte o guia completo em [DEPLOY.md](./DEPLOY.md).
+
+**Resumo rápido:**
+1. Crie um banco PostgreSQL na Vercel
+2. Configure a variável `DATABASE_URL` no projeto
+3. Faça push do código e a Vercel fará o deploy automaticamente
+4. As migrações serão aplicadas durante o build
 
 ## 🎨 Decisões de Arquitetura
 
