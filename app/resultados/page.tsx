@@ -1,3 +1,4 @@
+'use client';
 import { getResults } from "@/lib/actions/results";
 import { ResultsTable } from "@/components/ResultsTable";
 

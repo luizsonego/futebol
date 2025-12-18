@@ -1,3 +1,4 @@
+'use client';
 import { GameBlocked } from "@/components/GameBlocked";
 import { getTeams } from "@/lib/actions/teams";
 import { getOpenGameDay } from "@/lib/actions/gameDays";
