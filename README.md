@@ -1,6 +1,6 @@
 # ⚽ Sistema de Gerenciamento de Futebol
 
-MVP funcional para gerenciamento de jogos de futebol desenvolvido com Next.js 14, TypeScript, Prisma ORM e SQLite.
+MVP funcional para gerenciamento de jogos de futebol desenvolvido com Next.js 14, TypeScript, Prisma ORM e PostgreSQL.
 
 ## 🚀 Funcionalidades
 
@@ -16,7 +16,7 @@ MVP funcional para gerenciamento de jogos de futebol desenvolvido com Next.js 14
 - **Next.js 14** (App Router)
 - **TypeScript**
 - **Prisma ORM**
-- **SQLite**
+- **PostgreSQL** (SQLite para desenvolvimento local opcional)
 - **Zod** (validação)
 - **Tailwind CSS** (estilização)
 - **Server Actions** (operações de dados)

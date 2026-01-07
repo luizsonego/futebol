@@ -36,7 +36,9 @@ yarn-error.log*
 next-env.d.ts
 
 # prisma
-/prisma/migrations
+# Migrações devem ser commitadas para funcionar em produção
+/prisma/dev.db
+/prisma/dev.db-journal
 
 # PWA
 /public/sw.js
