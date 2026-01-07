@@ -15,15 +15,15 @@ export async function createTeam(data: TeamInput): Promise<ActionResult> {
   try {
     // Validação dos dados usando Zod
     const validated = teamSchema.parse(data);
-    
+
     // Persistência no banco de dados usando Prisma
     const team = await prisma.team.create({
       data: validated,
     });
-    
+
     // Revalidação do cache da página de times
     revalidatePath("/teams");
-    
+
     return { success: true, data: team };
   } catch (error) {
     // Tratamento específico para erros de validação Zod
@@ -34,7 +34,7 @@ export async function createTeam(data: TeamInput): Promise<ActionResult> {
         error: firstError?.message || "Dados inválidos",
       };
     }
-    
+
     // Tratamento para outros erros (ex: banco de dados)
     return {
       success: false,
@@ -57,6 +57,39 @@ export async function getTeams(): Promise<ActionResult> {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erro ao buscar times",
+    };
+  }
+}
+
+/**
+ * Atualiza um time no banco de dados
+ * @param id - ID do time a ser atualizado
+ * @param data - Dados do time validados pelo schema Zod
+ * @returns Resultado da operação com sucesso ou erro
+ */
+export async function updateTeam(id: string, data: TeamInput): Promise<ActionResult> {
+  try {
+    uuidSchema.parse(id);
+    const validated = teamSchema.parse(data);
+
+    const team = await prisma.team.update({
+      where: { id },
+      data: validated,
+    });
+
+    revalidatePath("/teams");
+    return { success: true, data: team };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const firstError = error.errors[0];
+      return {
+        success: false,
+        error: firstError?.message || "Dados inválidos",
+      };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao atualizar time",
     };
   }
 }

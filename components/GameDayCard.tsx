@@ -15,6 +15,8 @@ interface GameDayCardProps {
   isOpen: boolean;
   matchesCount: number;
   finishedMatches: number;
+  matchDurationMinutes: number;
+  onEdit?: () => void;
 }
 
 export function GameDayCard({
@@ -24,6 +26,8 @@ export function GameDayCard({
   isOpen,
   matchesCount,
   finishedMatches,
+  matchDurationMinutes,
+  onEdit,
 }: GameDayCardProps) {
   const router = useRouter();
   const toast = useToast();
@@ -95,6 +99,21 @@ export function GameDayCard({
             >
               →
             </Link>
+            {onEdit && (
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                disabled={isDeleting}
+                variant="secondary"
+                size="sm"
+                className="text-sm"
+              >
+                Editar
+              </Button>
+            )}
             <Button
               onClick={handleDeleteClick}
               disabled={isDeleting}

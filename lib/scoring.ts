@@ -44,7 +44,7 @@ export async function updateTeamScores(
   // Calcula os novos valores para o time 1
   const team1NewGoalsScored = team1.goalsScored + goalsTeam1;
   const team1NewGoalsConceded = team1.goalsConceded + goalsTeam2;
-  
+
   // Calcula os novos valores para o time 2
   const team2NewGoalsScored = team2.goalsScored + goalsTeam2;
   const team2NewGoalsConceded = team2.goalsConceded + goalsTeam1;
@@ -81,6 +81,80 @@ export async function updateTeamScores(
       where: { id: team2Id },
       data: {
         points: team2.points + team2PointsToAdd,
+        goalsScored: team2NewGoalsScored,
+        goalsConceded: team2NewGoalsConceded,
+      },
+    }),
+  ]);
+}
+
+/**
+ * Remove a pontuação e gols dos times quando uma partida finalizada é deletada
+ * 
+ * Esta função faz o inverso de updateTeamScores, subtraindo os pontos e gols
+ * que foram adicionados quando a partida foi finalizada.
+ * 
+ * @param team1Id - ID do primeiro time
+ * @param team2Id - ID do segundo time
+ * @param goalsTeam1 - Gols marcados pelo primeiro time
+ * @param goalsTeam2 - Gols marcados pelo segundo time
+ */
+export async function removeTeamScores(
+  team1Id: string,
+  team2Id: string,
+  goalsTeam1: number,
+  goalsTeam2: number
+) {
+  // Busca os times atuais para obter os valores existentes
+  const [team1, team2] = await Promise.all([
+    prisma.team.findUnique({ where: { id: team1Id } }),
+    prisma.team.findUnique({ where: { id: team2Id } }),
+  ]);
+
+  if (!team1 || !team2) {
+    throw new Error("Um ou ambos os times não foram encontrados");
+  }
+
+  // Calcula os novos valores para o time 1 (subtraindo os gols)
+  const team1NewGoalsScored = Math.max(0, team1.goalsScored - goalsTeam1);
+  const team1NewGoalsConceded = Math.max(0, team1.goalsConceded - goalsTeam2);
+
+  // Calcula os novos valores para o time 2 (subtraindo os gols)
+  const team2NewGoalsScored = Math.max(0, team2.goalsScored - goalsTeam2);
+  const team2NewGoalsConceded = Math.max(0, team2.goalsConceded - goalsTeam1);
+
+  // Determina o resultado e calcula os pontos a remover
+  let team1PointsToRemove = 0;
+  let team2PointsToRemove = 0;
+
+  if (goalsTeam1 > goalsTeam2) {
+    // Time 1 venceu
+    team1PointsToRemove = 3;
+    team2PointsToRemove = 0;
+  } else if (goalsTeam2 > goalsTeam1) {
+    // Time 2 venceu
+    team1PointsToRemove = 0;
+    team2PointsToRemove = 3;
+  } else {
+    // Empate
+    team1PointsToRemove = 1;
+    team2PointsToRemove = 1;
+  }
+
+  // Atualiza ambos os times em uma transação (subtraindo os pontos e gols)
+  await prisma.$transaction([
+    prisma.team.update({
+      where: { id: team1Id },
+      data: {
+        points: Math.max(0, team1.points - team1PointsToRemove),
+        goalsScored: team1NewGoalsScored,
+        goalsConceded: team1NewGoalsConceded,
+      },
+    }),
+    prisma.team.update({
+      where: { id: team2Id },
+      data: {
+        points: Math.max(0, team2.points - team2PointsToRemove),
         goalsScored: team2NewGoalsScored,
         goalsConceded: team2NewGoalsConceded,
       },

@@ -1,6 +1,9 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { ZodError } from "zod";
 import { prisma } from "../prisma";
+import { updateTeamResultSchema, type UpdateTeamResultInput } from "../validations";
 import type { ActionResult } from "../types";
 
 export interface TeamResult {
@@ -51,6 +54,79 @@ export async function getResults(): Promise<ActionResult<TeamResult[]>> {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erro ao buscar resultados",
+    };
+  }
+}
+
+/**
+ * Reseta todos os resultados (zera pontos e gols de todos os times)
+ */
+export async function resetAllResults(): Promise<ActionResult> {
+  try {
+    await prisma.team.updateMany({
+      data: {
+        points: 0,
+        goalsScored: 0,
+        goalsConceded: 0,
+      },
+    });
+
+    revalidatePath("/resultados");
+    revalidatePath("/standings");
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao resetar resultados",
+    };
+  }
+}
+
+/**
+ * Atualiza manualmente os pontos e gols marcados de um time
+ */
+export async function updateTeamResult(
+  data: UpdateTeamResultInput
+): Promise<ActionResult> {
+  try {
+    const validated = updateTeamResultSchema.parse(data);
+
+    // Verifica se o time existe
+    const team = await prisma.team.findUnique({
+      where: { id: validated.teamId },
+    });
+
+    if (!team) {
+      return {
+        success: false,
+        error: "Time não encontrado",
+      };
+    }
+
+    // Atualiza o time
+    await prisma.team.update({
+      where: { id: validated.teamId },
+      data: {
+        points: validated.points,
+        goalsScored: validated.goalsScored,
+        // Mantém goalsConceded como está, pois não faz parte da edição manual
+      },
+    });
+
+    revalidatePath("/resultados");
+    revalidatePath("/standings");
+    return { success: true };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const firstError = error.errors[0];
+      return {
+        success: false,
+        error: firstError?.message || "Dados inválidos",
+      };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao atualizar resultado",
     };
   }
 }

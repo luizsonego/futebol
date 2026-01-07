@@ -274,6 +274,50 @@ export async function getGameDay(id: string): Promise<ActionResult> {
   }
 }
 
+/**
+ * Atualiza um dia de jogos no banco de dados
+ * @param id - ID do dia de jogos a ser atualizado
+ * @param data - Dados do dia de jogos validados pelo schema Zod
+ * @returns Resultado da operação com sucesso ou erro
+ */
+export async function updateGameDay(
+  id: string,
+  data: GameDayInput
+): Promise<ActionResult> {
+  try {
+    uuidSchema.parse(id);
+    const validated = gameDaySchema.parse(data);
+
+    const gameDay = await prisma.gameDay.update({
+      where: { id },
+      data: {
+        date: new Date(validated.date),
+        description: validated.description || null,
+        matchDurationMinutes: validated.matchDurationMinutes,
+      },
+    });
+
+    revalidatePath("/game-days");
+    revalidatePath(`/game-days/${id}`);
+    return { success: true, data: gameDay };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const firstError = error.errors[0];
+      return {
+        success: false,
+        error: firstError?.message || "Dados inválidos",
+      };
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar dia de jogos",
+    };
+  }
+}
+
 export async function deleteGameDay(id: string): Promise<ActionResult> {
   try {
     uuidSchema.parse(id);

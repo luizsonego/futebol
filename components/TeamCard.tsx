@@ -11,13 +11,14 @@ interface TeamCardProps {
   primaryColor: string;
   secondaryColor: string;
   onDeleted?: () => void;
+  onEdit?: () => void;
 }
 
 /**
  * Componente de card para exibir informações de um time
  * Responsável apenas pela UI e interação do usuário
  */
-export function TeamCard({ id, name, primaryColor, secondaryColor, onDeleted }: TeamCardProps) {
+export function TeamCard({ id, name, primaryColor, secondaryColor, onDeleted, onEdit }: TeamCardProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,16 +87,28 @@ export function TeamCard({ id, name, primaryColor, secondaryColor, onDeleted }: 
             </div>
           </div>
         </div>
-        <Button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          variant="danger"
-          size="md"
-          fullWidth
-          className="sm:w-auto"
-        >
-          {isDeleting ? "Deletando..." : "Deletar"}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {onEdit && (
+            <Button
+              onClick={onEdit}
+              disabled={isDeleting}
+              variant="secondary"
+              size="md"
+              className="flex-1 sm:flex-none"
+            >
+              Editar
+            </Button>
+          )}
+          <Button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            variant="danger"
+            size="md"
+            className="flex-1 sm:flex-none"
+          >
+            {isDeleting ? "Deletando..." : "Deletar"}
+          </Button>
+        </div>
       </div>
     </div>
   );

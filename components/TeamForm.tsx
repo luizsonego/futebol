@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createTeam } from "@/lib/actions/teams";
+import { createTeam, updateTeam } from "@/lib/actions/teams";
 import { type TeamInput } from "@/lib/validations";
 import { Button } from "./Button";
 import { useToast } from "./ToastProvider";
@@ -10,13 +10,20 @@ import { Loading } from "./Loading";
 
 interface TeamFormProps {
   onSuccess?: () => void;
+  teamToEdit?: {
+    id: string;
+    name: string;
+    primaryColor: string;
+    secondaryColor: string;
+  } | null;
+  onCancel?: () => void;
 }
 
 /**
- * Componente de formulário para cadastro de times
+ * Componente de formulário para cadastro e edição de times
  * Responsável apenas pela UI e interação do usuário
  */
-export function TeamForm({ onSuccess }: TeamFormProps) {
+export function TeamForm({ onSuccess, teamToEdit, onCancel }: TeamFormProps) {
   const router = useRouter();
   const toast = useToast();
   const [formData, setFormData] = useState<TeamInput>({
@@ -27,21 +34,45 @@ export function TeamForm({ onSuccess }: TeamFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Preencher formulário quando estiver editando
+  useEffect(() => {
+    if (teamToEdit) {
+      setFormData({
+        name: teamToEdit.name,
+        primaryColor: teamToEdit.primaryColor,
+        secondaryColor: teamToEdit.secondaryColor,
+      });
+    } else {
+      setFormData({
+        name: "",
+        primaryColor: "#000000",
+        secondaryColor: "#FFFFFF",
+      });
+    }
+  }, [teamToEdit]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
     // Chama a Server Action para persistência (validação ocorre no servidor)
-    const result = await createTeam(formData);
+    const result = teamToEdit
+      ? await updateTeam(teamToEdit.id, formData)
+      : await createTeam(formData);
     
     if (result.success) {
-      setFormData({ name: "", primaryColor: "#000000", secondaryColor: "#FFFFFF" });
-      toast.showToast("Time criado com sucesso! ✓", "success");
+      if (!teamToEdit) {
+        setFormData({ name: "", primaryColor: "#000000", secondaryColor: "#FFFFFF" });
+      }
+      toast.showToast(
+        teamToEdit ? "Time atualizado com sucesso! ✓" : "Time criado com sucesso! ✓",
+        "success"
+      );
       router.refresh();
       onSuccess?.();
     } else {
-      const errorMsg = result.error || "Erro ao criar time";
+      const errorMsg = result.error || (teamToEdit ? "Erro ao atualizar time" : "Erro ao criar time");
       setError(errorMsg);
       toast.showToast(errorMsg, "error");
     }
@@ -155,22 +186,37 @@ export function TeamForm({ onSuccess }: TeamFormProps) {
         </div>
       </div>
 
-      <Button
-        type="submit"
-        disabled={isSubmitting || !formData.name.trim()}
-        variant="primary"
-        size="md"
-        fullWidth
-      >
-        {isSubmitting ? (
-          <span className="flex items-center justify-center gap-2">
-            <Loading size="sm" />
-            Criando...
-          </span>
-        ) : (
-          "Criar Time"
+      <div className="flex gap-3">
+        {teamToEdit && onCancel && (
+          <Button
+            type="button"
+            onClick={onCancel}
+            disabled={isSubmitting}
+            variant="secondary"
+            size="md"
+            className="flex-1"
+          >
+            Cancelar
+          </Button>
         )}
-      </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting || !formData.name.trim()}
+          variant="primary"
+          size="md"
+          className={teamToEdit && onCancel ? "flex-1" : "w-full"}
+          fullWidth={!teamToEdit || !onCancel}
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loading size="sm" />
+              {teamToEdit ? "Atualizando..." : "Criando..."}
+            </span>
+          ) : (
+            teamToEdit ? "Atualizar Time" : "Criar Time"
+          )}
+        </Button>
+      </div>
     </form>
   );
 }

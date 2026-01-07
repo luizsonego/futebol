@@ -12,7 +12,7 @@ import {
   type UpdateMatchGoalsInput,
   type ReplaceTeamsInput,
 } from "../validations";
-import { updateTeamScores } from "../scoring";
+import { updateTeamScores, removeTeamScores } from "../scoring";
 import type { ActionResult } from "../types";
 
 export async function createMatch(data: MatchInput): Promise<ActionResult> {
@@ -184,7 +184,7 @@ export async function finishMatch(
     // Calcula o tempo cronometrado da partida
     const endedAt = new Date();
     let actualDurationMinutes: number | null = null;
-    
+
     if (match.startedAt) {
       const durationMs = endedAt.getTime() - new Date(match.startedAt).getTime();
       actualDurationMinutes = Math.round((durationMs / 1000 / 60) * 100) / 100; // Arredonda para 2 casas decimais
@@ -233,9 +233,34 @@ export async function finishMatch(
 export async function deleteMatch(id: string): Promise<ActionResult> {
   try {
     uuidSchema.parse(id);
+
+    // Busca a partida antes de deletar para verificar se estava finalizada
+    const match = await prisma.match.findUnique({
+      where: { id },
+    });
+
+    if (!match) {
+      return {
+        success: false,
+        error: "Partida não encontrada",
+      };
+    }
+
+    // Se a partida estava finalizada, remove a pontuação e gols dos times
+    if (match.status === "finished") {
+      await removeTeamScores(
+        match.team1Id,
+        match.team2Id,
+        match.goalsTeam1,
+        match.goalsTeam2
+      );
+    }
+
+    // Deleta a partida
     await prisma.match.delete({
       where: { id },
     });
+
     revalidatePath("/game-days");
     revalidatePath("/matches");
     revalidatePath("/standings");
@@ -353,6 +378,102 @@ export async function replaceTeamsInMatch(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erro ao substituir times",
+    };
+  }
+}
+
+export async function updateFinishedMatchResult(
+  matchId: string,
+  goalsTeam1: number,
+  goalsTeam2: number
+): Promise<ActionResult> {
+  try {
+    const validated = updateMatchGoalsSchema.parse({
+      matchId,
+      goalsTeam1,
+      goalsTeam2,
+    });
+
+    // Busca a partida atual
+    const match = await prisma.match.findUnique({
+      where: { id: validated.matchId },
+    });
+
+    if (!match) {
+      return {
+        success: false,
+        error: "Partida não encontrada",
+      };
+    }
+
+    if (match.status !== "finished") {
+      return {
+        success: false,
+        error: "Apenas partidas finalizadas podem ter resultados editados",
+      };
+    }
+
+    // Se os resultados são os mesmos, não precisa fazer nada
+    if (
+      match.goalsTeam1 === validated.goalsTeam1 &&
+      match.goalsTeam2 === validated.goalsTeam2
+    ) {
+      return {
+        success: true,
+        data: match,
+      };
+    }
+
+    // Remove os pontos e gols antigos dos times
+    await removeTeamScores(
+      match.team1Id,
+      match.team2Id,
+      match.goalsTeam1,
+      match.goalsTeam2
+    );
+
+    // Atualiza o resultado da partida
+    const updatedMatch = await prisma.match.update({
+      where: { id: validated.matchId },
+      data: {
+        goalsTeam1: validated.goalsTeam1,
+        goalsTeam2: validated.goalsTeam2,
+      },
+      include: {
+        team1: true,
+        team2: true,
+        gameDay: true,
+      },
+    });
+
+    // Adiciona os novos pontos e gols dos times
+    await updateTeamScores(
+      match.team1Id,
+      match.team2Id,
+      validated.goalsTeam1,
+      validated.goalsTeam2
+    );
+
+    revalidatePath("/game-days");
+    revalidatePath(`/game-days/${match.gameDayId}`);
+    revalidatePath("/matches");
+    revalidatePath("/standings");
+    revalidatePath("/resultados");
+    return { success: true, data: updatedMatch };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const firstError = error.errors[0];
+      return {
+        success: false,
+        error: firstError?.message || "Dados inválidos",
+      };
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar resultado da partida",
     };
   }
 }

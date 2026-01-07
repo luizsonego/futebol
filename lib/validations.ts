@@ -80,3 +80,12 @@ export const replaceTeamsSchema = z.object({
 
 export type ReplaceTeamsInput = z.infer<typeof replaceTeamsSchema>;
 
+// Schema para atualização de resultados de um time
+export const updateTeamResultSchema = z.object({
+  teamId: z.string().uuid("ID do time inválido"),
+  points: z.number().int().min(0, "Pontos devem ser maior ou igual a 0"),
+  goalsScored: z.number().int().min(0, "Gols marcados devem ser maior ou igual a 0"),
+});
+
+export type UpdateTeamResultInput = z.infer<typeof updateTeamResultSchema>;
+
